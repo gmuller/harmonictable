@@ -9,6 +9,7 @@ import processing.core.PFont;
 import rwmidi.MidiOutput;
 import rwmidi.MidiOutputDevice;
 import rwmidi.RWMidi;
+import wiiJava.WiiController;
 import controlP5.Button;
 import controlP5.ControlEvent;
 import controlP5.ControlP5;
@@ -30,6 +31,7 @@ public class HarmonicTable extends PApplet {
 		PApplet.main(new String[] { "harmonicTable.HarmonicTable" });
 	}
 
+	WiiController wiiController;
 	ControlP5 controlP5;
 	Textarea aboutInfoBox;
 	Textarea versionBox;
@@ -38,8 +40,8 @@ public class HarmonicTable extends PApplet {
 	static final String aboutInfoString = "HarmonicTable keyboard emulator\n For info visit grantmuller.com";
 	static final String versionBoxString = "HarmonicTable 0.3";
 	static final int 
-					MAINTAB = 1000, 
-					SETUPTAB = 1001;
+	MAINTAB = 1000, 
+	SETUPTAB = 1001;
 	int currentTab = MAINTAB;
 
 	static int length = 33; //length of one side of the hexagon
@@ -52,11 +54,6 @@ public class HarmonicTable extends PApplet {
 	static final float screenWidth = 12*((2*a)+(2*c))+a+(14*space); //based on hexagon sizes
 	static final float screenHeight = b*19+(8.5f*space); //based on hexagon sizes
 
-	static final int whiteKey = 255; //color of all white keys
-	static final int blackKey = 0; //color of all black keys
-	final int Gsharp = color(4,55,139); //color for G#
-	final int D = color(188,228,246); //color for D
-
 	MidiOutput midiOutput;
 	MidiReference midiReference = MidiReference.getMidiReference();
 	String startingNote = "C2";
@@ -64,18 +61,18 @@ public class HarmonicTable extends PApplet {
 	int noteNumber;
 	int currentNote;
 	boolean releaseNotesToggle = false;
-	ArrayList<Integer> activeNotes = new ArrayList<Integer>();
 
 	PFont font;
 
 	ArrayList<HexButton> hexButtons;
 	ArrayList<Controller> controllerList;
-	boolean doRedraw = true;
 	private int[] chord = ChordReference.MAJOR.getDegrees();
 	private boolean chordLock = false;
+	private boolean doRedraw = true;
 
 
 	public void setup(){
+		wiiController = new WiiController();
 		size(ceil(screenWidth)+2,ceil(screenHeight)+17);
 		smooth();
 		textAlign(CENTER);
@@ -85,7 +82,7 @@ public class HarmonicTable extends PApplet {
 
 		ScrollList startingNoteList = controlP5.addScrollList("StartingNoteList",0,40,100,500);
 		startingNoteList.setLabel("Starting Note");
-		startingNoteList.setBackgroundColor(Gsharp);
+		startingNoteList.setBackgroundColor(color(4,55,139));
 		for (int i = 0; i < 55; i++) {
 			Button button = startingNoteList.addItem(midiReference.getNoteName(i,true),9+i);
 			button.setId(i);
@@ -127,14 +124,13 @@ public class HarmonicTable extends PApplet {
 	public void draw(){
 		switch(currentTab){
 		case MAINTAB: 
+			if (doRedraw){
+				fill(0);
+				strokeWeight(0);
+				stroke(color(188,228,246));
+				rect(0,0,width,16);
+				line(0,17, width, 17);
 
-			fill(0);
-			strokeWeight(0);
-			stroke(D);
-			rect(0,0,width,16);
-			line(0,17, width, 17);
-
-			if(doRedraw){
 				strokeWeight(0);
 				fill(255);
 				rect(0,17,width,height-18);
@@ -144,7 +140,7 @@ public class HarmonicTable extends PApplet {
 				for (int i = 0; i < listSize; i++){
 					hexButtons.get(i).drawHex();
 				}
-				doRedraw = !doRedraw;
+				doRedraw = false;
 			}
 			break;
 		case SETUPTAB: 
@@ -160,8 +156,7 @@ public class HarmonicTable extends PApplet {
 			for (int i=0; i<12; i++){
 
 				hexButtons.add(new HexButton(this, space+(i*xOffset), parseInt(height-(j*b)), length, 
-						noteNumber, getNoteName(noteNumber), getButtonColor(getNoteName(noteNumber)),
-						getNoteColor(getNoteName(noteNumber))));
+						noteNumber, getNoteName(noteNumber)));
 				noteNumber++;
 			}
 
@@ -171,8 +166,7 @@ public class HarmonicTable extends PApplet {
 
 			for (int i=0; i<12; i++){
 				hexButtons.add(new HexButton(this, space+parseInt(a+c)+(i*xOffset), parseInt(height-(j*b)), length, 
-						noteNumber, getNoteName(noteNumber), getButtonColor(getNoteName(noteNumber)),
-						getNoteColor(getNoteName(noteNumber))));
+						noteNumber, getNoteName(noteNumber)));
 				noteNumber++;
 			}
 
@@ -182,30 +176,6 @@ public class HarmonicTable extends PApplet {
 
 	public String getNoteName(int noteNumber) {
 		return midiReference.getNoteName(noteNumber, true, true);
-	}
-
-	public int getButtonColor(String noteName) {
-		int color = 255;
-		if (noteName.contains("G#")) {
-			color = Gsharp;
-		} else if (noteName.contains("D") && !noteName.contains("#")) {
-			color = D;
-		} else if (noteName.contains("#") || noteName.contains("b")) {
-			color = blackKey;
-		}
-		return color;
-	}
-
-	public int getNoteColor(String noteName){
-		int color = 0;	
-		if (noteName.contains("G#")) {
-			color = 255;
-		} else if (noteName.contains("D") && !noteName.contains("#")) {
-			color = 0;
-		} else if (noteName.contains("#") || noteName.contains("b")) {
-			color = 255;
-		}
-		return color;
 	}
 
 	public void resetNoteNumber(int rowNumber){
@@ -221,25 +191,82 @@ public class HarmonicTable extends PApplet {
 		}
 	}
 
+	public boolean isPointerInArea(HexButton hexButton){
+		return (mouseX >= hexButton.getStartX()+a && mouseX <= hexButton.getStartX()+a+c
+				&& mouseY >= hexButton.getStartY() && mouseY <= hexButton.getStartY()+(2*b));
+	}
+
+	public void playChord(int buttonNumber, int noteNumber){
+		int currentRow = buttonNumber/12;
+		for (int j = 1; j < chord.length; j++){
+			int localNoteNumber = currentNote + chord[j];
+			midiOutput.sendNoteOn(0, localNoteNumber, 100);
+
+			switch(chord[j]){
+			case 1: 
+			case 2: hexButtons.get(buttonNumber + chord[j]).setActive(true);
+			case 3:
+				if (currentRow % 2 == 0){
+					hexButtons.get(buttonNumber + 11).setActive(true); 
+				} else {
+					hexButtons.get(buttonNumber + 12).setActive(true); 
+				} break;
+			case 4: 
+				if (currentRow % 2 == 0){
+					hexButtons.get(buttonNumber + 12).setActive(true); 
+				} else {
+					hexButtons.get(buttonNumber + 13).setActive(true); 
+				} break;
+			case 5: 
+				if (currentRow % 2 == 0){
+					hexButtons.get(buttonNumber + 13).setActive(true); 
+				} else {
+					hexButtons.get(buttonNumber + 14).setActive(true); 
+				} break;
+			case 6: hexButtons.get(buttonNumber + 23).setActive(true); break;
+			case 7: hexButtons.get(buttonNumber + 24).setActive(true); break;
+			case 8: hexButtons.get(buttonNumber + 25).setActive(true); break;
+			case 9: hexButtons.get(buttonNumber + 26).setActive(true); break;
+			case 10: 
+				if (currentRow % 2 == 0){
+					hexButtons.get(buttonNumber + 35).setActive(true); 
+				} else {
+					hexButtons.get(buttonNumber + 36).setActive(true); 
+				} break;		
+			case 11: 
+				if (currentRow % 2 == 0){
+					hexButtons.get(buttonNumber + 36).setActive(true); 
+				} else {
+					hexButtons.get(buttonNumber + 37).setActive(true); 
+				} break;
+			case 14: hexButtons.get(buttonNumber + 48).setActive(true); break;
+			case 17:
+				if (currentRow % 2 == 0){
+					hexButtons.get(buttonNumber + 59).setActive(true); 
+				} else {
+					hexButtons.get(buttonNumber + 60).setActive(true); 
+				} break;
+			case 21: hexButtons.get(buttonNumber + 48).setActive(true); break;
+			}
+			
+		}
+	}
+
 	public void mousePressed(){
 		if (currentTab == MAINTAB){
 			int listSize = hexButtons.size();
 			for (int i = 0; i < listSize; i++){
 				HexButton button = (HexButton) hexButtons.get(i);
-				if (mouseX >= button.getStartX()+a && mouseX <= button.getStartX()+a+c
-						&& mouseY >= button.getStartY() && mouseY <= button.getStartY()+(2*b)){
+				if (isPointerInArea(button)){
 					currentNote = button.getButtonNoteNumber();
-					activeNotes.add(currentNote);
-					if (keyPressed || chordLock){
-						int[] thisChord = chord;
-						for (int j = 0; j < thisChord.length; j++){
-							midiOutput.sendNoteOn(0, button.getButtonNoteNumber() + thisChord[j], 100);
-							activeNotes.add(currentNote + thisChord[j]);
-						}
-						return;
-					}
+					button.setActive(true);
 					midiOutput.sendNoteOn(0, button.getButtonNoteNumber(), 100);
-					activeNotes.add(currentNote);
+					System.out.println(currentNote);
+					System.out.println(i);
+					if (keyPressed || chordLock){
+						playChord(i, currentNote);
+					}
+					doRedraw = true;
 				}
 			}
 		}
@@ -250,21 +277,16 @@ public class HarmonicTable extends PApplet {
 			int listSize = hexButtons.size();
 			for (int i = 0; i < listSize; i++){
 				HexButton button = (HexButton) hexButtons.get(i);
-				if (mouseX >= button.getStartX()+a && mouseX <= button.getStartX()+a+c
-						&& mouseY >= button.getStartY() && mouseY <= button.getStartY()+(2*b)){
+				if (isPointerInArea(button)){
 					if (currentNote != button.getButtonNoteNumber()){
 						currentNote = button.getButtonNoteNumber();
-						if (keyPressed || chordLock){
-							int[] thisChord = chord;
-							for (int j = 0; j < thisChord.length; j++){
-								midiOutput.sendNoteOn(0, currentNote + thisChord[j], 100);
-								activeNotes.add(currentNote + thisChord[j]);
-							}
-							return;
-						}
+						button.setActive(true);
 						midiOutput.sendNoteOn(0, button.getButtonNoteNumber(), 100);
-						activeNotes.add(currentNote);
+						if (keyPressed || chordLock){
+							playChord(i, currentNote);
+						}
 					}
+					doRedraw = true;
 				}
 			}
 		}
@@ -272,12 +294,15 @@ public class HarmonicTable extends PApplet {
 
 	public void mouseReleased(){
 		if (currentTab == MAINTAB){
-			if (releaseNotesToggle){
-				for (int i = activeNotes.size()-1; i >= 0; i--){
-					midiOutput.sendNoteOff(0, activeNotes.get(i), 0);
-					activeNotes.remove(i);
+			int listSize = hexButtons.size();
+			for (int i = 0; i < listSize; i++){
+				HexButton button = hexButtons.get(i);
+				if (button.isActive() && releaseNotesToggle){
+					midiOutput.sendNoteOff(0, button.getButtonNoteNumber(), 0);					
 				}
+				button.setActive(false);
 			}
+			doRedraw = true;
 		}
 	}
 
@@ -309,6 +334,7 @@ public class HarmonicTable extends PApplet {
 			if (chordLock) chordLockBox.setText("CHORD LOCK"); 
 			break;
 		}
+		doRedraw = true;
 	}
 
 	public void keyReleased(){
@@ -318,19 +344,20 @@ public class HarmonicTable extends PApplet {
 			chord = new int[1];
 			chord[0] = 0;
 		}
+		doRedraw = true;
 	}
 
 	public void setChord(ChordReference chordRef){
 		chord = chordRef.getDegrees();
 		currentChordBox.setText(chordRef.getCommonName());
 	}
+
 	void controlEvent(ControlEvent theEvent) {
 		if (theEvent.isTab()) {
 			//println("tab : "+theEvent.tab().id()+" / "+theEvent.tab().name());
 			currentTab =  theEvent.tab().id();
 			switch(currentTab){
 			case MAINTAB:
-				doRedraw = true;
 				createHexButtons();
 				break;
 			case SETUPTAB:

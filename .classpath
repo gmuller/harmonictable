@@ -7,5 +7,6 @@
 	<classpathentry kind="lib" path="D:/documents/Processing/Libraries/rwmidi/library/rwmidi.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/Props"/>
 	<classpathentry kind="lib" path="D:/processing/lib/core.jar" sourcepath="D:/projects/Java/JavaLib/processing-1.0/core/src"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/WiiJava"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
