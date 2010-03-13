@@ -23,6 +23,12 @@ import controlP5.Textarea;
 
 public class HarmonicTable extends PApplet {
 
+	/*
+	 * TODO: Make the HexButton Arraylist into a map that is accessible by a known key, 
+	 * to help with performance problems. Perhaps use a combo of starting position to be the key
+	 * 
+	 * TODO: 
+	 */
 	private static final long serialVersionUID = -1512978966491270400L;
 
 	public static void main(String[] args) {
@@ -38,7 +44,7 @@ public class HarmonicTable extends PApplet {
 	Textarea currentChordBox;
 	Textarea chordLockBox;
 	static final String aboutInfoString = "HarmonicTable keyboard emulator\n For info visit grantmuller.com";
-	static final String versionBoxString = "HarmonicTable 0.3";
+	static final String versionBoxString = "HarmonicTable 0.5";
 	static final int 
 	MAINTAB = 1000, 
 	SETUPTAB = 1001;
@@ -230,54 +236,58 @@ public class HarmonicTable extends PApplet {
 		for (int j = 1; j < chord.length; j++){
 			int localNoteNumber = currentNote + chord[j];
 			midiOutput.sendNoteOn(0, localNoteNumber, 100);
-
+			int buttonToActivate = 0;
 			switch(chord[j]){
 			case 1: 
-			case 2: hexButtons.get(buttonNumber + chord[j]).setActive(true);
+			case 2: buttonToActivate = buttonNumber + chord[j]; 
 			case 3:
 				if (currentRow % 2 == 0){
-					hexButtons.get(buttonNumber + 11).setActive(true); 
+					buttonToActivate = buttonNumber + 11; 
 				} else {
-					hexButtons.get(buttonNumber + 12).setActive(true); 
+					buttonToActivate = buttonNumber + 12; 
 				} break;
 			case 4: 
 				if (currentRow % 2 == 0){
-					hexButtons.get(buttonNumber + 12).setActive(true); 
+					buttonToActivate = buttonNumber + 12; 
 				} else {
-					hexButtons.get(buttonNumber + 13).setActive(true); 
+					buttonToActivate = buttonNumber + 13; 
 				} break;
 			case 5: 
 				if (currentRow % 2 == 0){
-					hexButtons.get(buttonNumber + 13).setActive(true); 
+					buttonToActivate = buttonNumber + 13; 
 				} else {
-					hexButtons.get(buttonNumber + 14).setActive(true); 
+					buttonToActivate = buttonNumber + 14; 
 				} break;
-			case 6: hexButtons.get(buttonNumber + 23).setActive(true); break;
-			case 7: hexButtons.get(buttonNumber + 24).setActive(true); break;
-			case 8: hexButtons.get(buttonNumber + 25).setActive(true); break;
-			case 9: hexButtons.get(buttonNumber + 26).setActive(true); break;
+			case 6: buttonToActivate = buttonNumber + 23; break;
+			case 7: buttonToActivate = buttonNumber + 24; break;
+			case 8: buttonToActivate = buttonNumber + 25; break;
+			case 9: buttonToActivate = buttonNumber + 26; break;
 			case 10: 
 				if (currentRow % 2 == 0){
-					hexButtons.get(buttonNumber + 35).setActive(true); 
+					buttonToActivate = buttonNumber + 35; 
 				} else {
-					hexButtons.get(buttonNumber + 36).setActive(true); 
+					buttonToActivate = buttonNumber + 36; 
 				} break;		
 			case 11: 
 				if (currentRow % 2 == 0){
-					hexButtons.get(buttonNumber + 36).setActive(true); 
+					buttonToActivate = buttonNumber + 36; 
 				} else {
-					hexButtons.get(buttonNumber + 37).setActive(true); 
+					buttonToActivate = buttonNumber + 37; 
 				} break;
-			case 14: hexButtons.get(buttonNumber + 48).setActive(true); break;
+			case 14: buttonToActivate = buttonNumber + 48; break;
 			case 17:
 				if (currentRow % 2 == 0){
-					hexButtons.get(buttonNumber + 59).setActive(true); 
+					buttonToActivate = buttonNumber + 59; 
 				} else {
-					hexButtons.get(buttonNumber + 60).setActive(true); 
+					buttonToActivate = buttonNumber + 60; 
 				} break;
-			case 21: hexButtons.get(buttonNumber + 48).setActive(true); break;
+			case 21: buttonToActivate = buttonNumber + 48;
 			}
-
+			
+			if (buttonToActivate != 0
+					&& buttonToActivate < hexButtons.size()){
+				hexButtons.get(buttonToActivate).setActive(true);
+			}
 		}
 	}
 
@@ -290,8 +300,8 @@ public class HarmonicTable extends PApplet {
 					currentNote = button.getButtonNoteNumber();
 					button.setActive(true);
 					midiOutput.sendNoteOn(midiOutputChannel, currentNote, 100);
-					System.out.println(currentNote);
-					System.out.println(i);
+					//System.out.println(currentNote);
+					//System.out.println(i);
 					if (keyPressed || chordLock){
 						playChord(i, currentNote);
 					}
@@ -416,7 +426,7 @@ public class HarmonicTable extends PApplet {
 			}
 		}
 		else if (theEvent.isTab()) {
-			println("tab : "+theEvent.tab().id()+" / "+theEvent.tab().name());
+			//println("tab : "+theEvent.tab().id()+" / "+theEvent.tab().name());
 			currentTab =  theEvent.tab().id();
 			switch(currentTab){
 			case MAINTAB:
