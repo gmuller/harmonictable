@@ -4,9 +4,9 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/MidiReference"/>
 	<classpathentry kind="lib" path="D:/documents/Processing/Libraries/controlP5/library/controlP5.jar" sourcepath="D:/projects/Java/JavaLib/P5Libs/src"/>
-	<classpathentry kind="lib" path="D:/documents/Processing/Libraries/rwmidi/library/rwmidi.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/Props"/>
-	<classpathentry kind="lib" path="D:/processing/lib/core.jar" sourcepath="D:/projects/Java/JavaLib/processing-1.0/core/src"/>
+	<classpathentry kind="lib" path="D:/development/processing/lib/core.jar" sourcepath="D:/projects/Java/JavaLib/processing-1.0/core/src"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/WiiJava"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/RWMidi"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

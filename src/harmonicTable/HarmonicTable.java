@@ -6,8 +6,12 @@ import midiReference.ChordReference;
 import midiReference.MidiReference;
 import processing.core.PApplet;
 import processing.core.PFont;
+import rwmidi.MidiEvent;
+import rwmidi.MidiInput;
+import rwmidi.MidiInputDevice;
 import rwmidi.MidiOutput;
 import rwmidi.MidiOutputDevice;
+import rwmidi.Note;
 import rwmidi.RWMidi;
 import wiiJava.WiiController;
 import controlP5.Button;
@@ -19,11 +23,6 @@ import controlP5.Textarea;
 
 public class HarmonicTable extends PApplet {
 
-	/**
-	 * 
-	 */
-
-
 	private static final long serialVersionUID = -1512978966491270400L;
 
 	public static void main(String[] args) {
@@ -31,6 +30,7 @@ public class HarmonicTable extends PApplet {
 		PApplet.main(new String[] { "harmonicTable.HarmonicTable" });
 	}
 
+	//ImageIcon titlebaricon = new ImageIcon(loadBytes("hticon.gif"));
 	WiiController wiiController;
 	ControlP5 controlP5;
 	Textarea aboutInfoBox;
@@ -55,23 +55,26 @@ public class HarmonicTable extends PApplet {
 	static final float screenHeight = b*19+(8.5f*space); //based on hexagon sizes
 
 	MidiOutput midiOutput;
+	MidiInput midiInput;
 	MidiReference midiReference = MidiReference.getMidiReference();
 	String startingNote = "C2";
 	int previousNote;
 	int noteNumber;
 	int currentNote;
 	boolean releaseNotesToggle = false;
-
+	boolean midiThruToggle = false;
 	PFont font;
-
 	ArrayList<HexButton> hexButtons;
 	ArrayList<Controller> controllerList;
 	private int[] chord = ChordReference.MAJOR.getDegrees();
 	private boolean chordLock = false;
 	private boolean doRedraw = true;
-
+	private Integer midiOutputChannel = 0;
+	private Integer midiInputChannel = -1;
 
 	public void setup(){
+		//frame.setIconImage(titlebaricon.getImage());
+		this.frameRate(120);
 		wiiController = new WiiController();
 		size(ceil(screenWidth)+2,ceil(screenHeight)+17);
 		smooth();
@@ -91,12 +94,31 @@ public class HarmonicTable extends PApplet {
 
 		ScrollList midiOutputList = controlP5.addScrollList("MidiOutputList",150,40,250,100);
 		midiOutputList.setLabel("Midi Output");
-		MidiOutputDevice devices[] = RWMidi.getOutputDevices();
-		for (int i = 0; i < devices.length; i++) {
-			controlP5.Button button = midiOutputList.addItem(devices[i].getName(),i);
+		MidiOutputDevice outputDevices[] = RWMidi.getOutputDevices();
+		for (int i = 0; i < outputDevices.length; i++) {
+			controlP5.Button button = midiOutputList.addItem(outputDevices[i].getName(),i);
 			button.setId(i);
 		}
 		midiOutputList.setTab("setup");
+		controlP5.addNumberbox("MidiOutputChannel", 0, 150, 185, 25, 15).setTab("setup");
+		controlP5.controller("MidiOutputChannel").setLabel("Midi Output Channel");
+		controlP5.controller("MidiOutputChannel").setColorLabel(0);
+		controlP5.controller("MidiOutputChannel").setMin(1);
+		controlP5.controller("MidiOutputChannel").setMax(16);
+
+		ScrollList midiInputList = controlP5.addScrollList("MidiInputList",450,40,250,100);
+		midiInputList.setLabel("Midi Input");
+		MidiInputDevice inputDevices[] = RWMidi.getInputDevices();
+		for (int i = 0; i < inputDevices.length; i++) {
+			controlP5.Button button = midiInputList.addItem(inputDevices[i].getName(),i);
+			button.setId(i);
+		}		
+		midiInputList.setTab("setup");
+		controlP5.addNumberbox("MidiInputChannel", 0, 450, 185, 25, 15).setTab("setup");
+		controlP5.controller("MidiInputChannel").setLabel("Midi Input Channel");
+		controlP5.controller("MidiInputChannel").setColorLabel(0);
+		controlP5.controller("MidiInputChannel").setMin(0);
+		controlP5.controller("MidiInputChannel").setMax(16);
 
 		aboutInfoBox = controlP5.addTextarea("AboutInfoBox", aboutInfoString, width-160, height-25, 200, 25);
 		aboutInfoBox.setTab("setup");
@@ -107,15 +129,20 @@ public class HarmonicTable extends PApplet {
 		currentChordBox = controlP5.addTextarea("CurrentChordText", "", width-230, 3, 100, 10);
 		chordLockBox = controlP5.addTextarea("ChordLockText", "", width-310, 3, 100, 10);
 
-		controlP5.addToggle("releaseNotesToggle", false, 450f, 40f, 20, 20).setTab("setup");
+		controlP5.addToggle("midiThruToggle", false, 750f, 40f, 20, 20).setTab("setup");
+		controlP5.controller("midiThruToggle").setColorLabel(0);
+		controlP5.controller("midiThruToggle").setLabel("Midi Thru");
+
+		controlP5.addToggle("releaseNotesToggle", false, 750f, 80f, 20, 20).setTab("setup");
 		controlP5.controller("releaseNotesToggle").setColorLabel(0);
 		controlP5.controller("releaseNotesToggle").setLabel("Release Notes");
 
 		controlP5.tab("default").activateEvent(true).setId(MAINTAB);
 		controlP5.tab("default").setLabel("main");
 		controlP5.tab("setup").activateEvent(true).setId(SETUPTAB);
-
+		
 		midiOutput = RWMidi.getOutputDevices()[0].createOutput();
+		midiInput = RWMidi.getInputDevices()[0].createInput(this);
 
 		//initialize and fill an array of hex buttons
 		createHexButtons();
@@ -142,6 +169,8 @@ public class HarmonicTable extends PApplet {
 				}
 				doRedraw = false;
 			}
+			if (wiiController.buttonA)
+				System.out.println("A recieved");
 			break;
 		case SETUPTAB: 
 			background(255); break;
@@ -248,7 +277,7 @@ public class HarmonicTable extends PApplet {
 				} break;
 			case 21: hexButtons.get(buttonNumber + 48).setActive(true); break;
 			}
-			
+
 		}
 	}
 
@@ -260,7 +289,7 @@ public class HarmonicTable extends PApplet {
 				if (isPointerInArea(button)){
 					currentNote = button.getButtonNoteNumber();
 					button.setActive(true);
-					midiOutput.sendNoteOn(0, button.getButtonNoteNumber(), 100);
+					midiOutput.sendNoteOn(midiOutputChannel, currentNote, 100);
 					System.out.println(currentNote);
 					System.out.println(i);
 					if (keyPressed || chordLock){
@@ -281,7 +310,7 @@ public class HarmonicTable extends PApplet {
 					if (currentNote != button.getButtonNoteNumber()){
 						currentNote = button.getButtonNoteNumber();
 						button.setActive(true);
-						midiOutput.sendNoteOn(0, button.getButtonNoteNumber(), 100);
+						midiOutput.sendNoteOn(midiOutputChannel, currentNote, 100);
 						if (keyPressed || chordLock){
 							playChord(i, currentNote);
 						}
@@ -298,7 +327,7 @@ public class HarmonicTable extends PApplet {
 			for (int i = 0; i < listSize; i++){
 				HexButton button = hexButtons.get(i);
 				if (button.isActive() && releaseNotesToggle){
-					midiOutput.sendNoteOff(0, button.getButtonNoteNumber(), 0);					
+					midiOutput.sendNoteOff(midiOutputChannel, button.getButtonNoteNumber(), 0);					
 				}
 				button.setActive(false);
 			}
@@ -352,9 +381,42 @@ public class HarmonicTable extends PApplet {
 		currentChordBox.setText(chordRef.getCommonName());
 	}
 
-	void controlEvent(ControlEvent theEvent) {
-		if (theEvent.isTab()) {
-			//println("tab : "+theEvent.tab().id()+" / "+theEvent.tab().name());
+	public synchronized void MidiInputChannel(int theValue){
+		int oldChannel = midiInputChannel;
+		midiInputChannel = theValue - 1;
+		if (midiInput != null){
+			midiInput.unplug(this, "processEvents", oldChannel);
+			midiInput.plug(this, "processEvents", midiInputChannel);
+		}
+	}
+	
+	public void MidiOutputChannel(int theValue){
+		midiOutputChannel = theValue - 1;	
+	}
+	
+	public void controlEvent(ControlEvent theEvent) {
+		if (theEvent.isController()){
+			if (theEvent.controller().parent().name() == "StartingNoteList"){
+				startingNote = theEvent.name();
+			}
+
+			if (theEvent.controller().parent().name() == "MidiOutputList"){
+				if (midiOutput != null){
+					midiOutput.closeMidi();
+				}
+				midiOutput = RWMidi.getOutputDevices()[theEvent.controller().id()].createOutput();
+			}
+
+			if (theEvent.controller().parent().name() == "MidiInputList"){
+				if (midiInput != null){
+					midiInput.closeMidi();
+				}
+				midiInput = RWMidi.getInputDevices()[theEvent.controller().id()].createInput(this);
+				midiInput.plug(this, "processEvents", -1);
+			}
+		}
+		else if (theEvent.isTab()) {
+			println("tab : "+theEvent.tab().id()+" / "+theEvent.tab().name());
 			currentTab =  theEvent.tab().id();
 			switch(currentTab){
 			case MAINTAB:
@@ -364,14 +426,85 @@ public class HarmonicTable extends PApplet {
 			}
 			return;
 		}
-
-		if (theEvent.controller().parent().name() == "StartingNoteList"){
-			startingNote = theEvent.name();
-		}
-
-		if (theEvent.controller().parent().name() == "MidiOutputList"){
-			midiOutput.closeMidi();
-			midiOutput = RWMidi.getOutputDevices()[theEvent.controller().id()].createOutput();
+		else if (theEvent.isGroup()){
+			return;
 		}
 	}
+	
+	public void processEvents(Note note)
+	{
+		switch(note.getCommand()){
+		case MidiEvent.NOTE_ON:
+			int noteNumber = note.getPitch();
+			if (currentTab == MAINTAB){
+				int listSize = hexButtons.size();
+				for (int i = 0; i < listSize; i++){
+					HexButton button = (HexButton) hexButtons.get(i);
+					currentNote = button.getButtonNoteNumber();
+					if (currentNote == noteNumber){
+						button.setActive(true);
+						doRedraw = true;
+						if (midiThruToggle){
+							midiOutput.sendNoteOn(note.getChannel(), noteNumber, note.getVelocity());
+						}
+						return;
+					}
+				}
+			}
+			break;
+		case MidiEvent.NOTE_OFF:
+			//TODO: May need to repair this method
+			if (currentTab == MAINTAB){
+				int listSize = hexButtons.size();
+				for (int i = 0; i < listSize; i++){
+					HexButton button = hexButtons.get(i);
+					if (button.isActive()){
+						if (midiThruToggle){
+							midiOutput.sendNoteOff(note.getChannel(), note.getPitch(), note.getVelocity());
+						}			
+					}
+					button.setActive(false);
+				}
+				doRedraw = true;
+			}
+			break;
+		}
+	}
+
+	/*
+	public void noteOnReceived(Note note) {
+		
+		if (currentTab == MAINTAB){
+			int listSize = hexButtons.size();
+			for (int i = 0; i < listSize; i++){
+				HexButton button = (HexButton) hexButtons.get(i);
+				currentNote = button.getButtonNoteNumber();
+				if (currentNote == noteNumber){
+					button.setActive(true);
+					doRedraw = true;
+					if (midiThruToggle){
+						midiOutput.sendNoteOn(note.getChannel(), noteNumber, note.getVelocity());
+					}
+					return;
+				}
+			}
+		}
+	}
+
+	public void noteOffReceived(Note note){
+		if (currentTab == MAINTAB){
+			int listSize = hexButtons.size();
+			for (int i = 0; i < listSize; i++){
+				HexButton button = hexButtons.get(i);
+				if (button.isActive()){
+					if (midiThruToggle){
+						midiOutput.sendNoteOff(note.getChannel(), note.getPitch(), note.getVelocity());
+					}			
+				}
+				button.setActive(false);
+			}
+			doRedraw = true;
+		}
+	}
+	*/
 }
