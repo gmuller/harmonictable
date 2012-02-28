@@ -2,8 +2,6 @@ package harmonicTable;
 
 import java.util.ArrayList;
 
-import midiReference.ChordReference;
-import midiReference.MidiReference;
 import processing.core.PApplet;
 import processing.core.PFont;
 import rwmidi.MidiEvent;
@@ -13,7 +11,10 @@ import rwmidi.MidiOutput;
 import rwmidi.MidiOutputDevice;
 import rwmidi.Note;
 import rwmidi.RWMidi;
-import wiiJava.WiiController;
+
+import com.grantmuller.midiReference.ChordReference;
+import com.grantmuller.midiReference.MidiReference;
+
 import controlP5.Button;
 import controlP5.ControlEvent;
 import controlP5.ControlP5;
@@ -37,7 +38,6 @@ public class HarmonicTable extends PApplet {
 	}
 
 	//ImageIcon titlebaricon = new ImageIcon(loadBytes("hticon.gif"));
-	WiiController wiiController;
 	ControlP5 controlP5;
 	Textarea aboutInfoBox;
 	Textarea versionBox;
@@ -81,7 +81,6 @@ public class HarmonicTable extends PApplet {
 	public void setup(){
 		//frame.setIconImage(titlebaricon.getImage());
 		this.frameRate(120);
-		wiiController = new WiiController();
 		size(ceil(screenWidth)+2,ceil(screenHeight)+17);
 		smooth();
 		textAlign(CENTER);
@@ -175,8 +174,6 @@ public class HarmonicTable extends PApplet {
 				}
 				doRedraw = false;
 			}
-			if (wiiController.buttonA)
-				System.out.println("A recieved");
 			break;
 		case SETUPTAB: 
 			background(255); break;

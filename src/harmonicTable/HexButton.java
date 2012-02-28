@@ -1,6 +1,5 @@
 package harmonicTable;
 
-import shapes.Hexagon;
 
 public class HexButton extends Hexagon {
 
