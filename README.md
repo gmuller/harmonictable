@@ -9,7 +9,7 @@ There are two tabs at the top, one for the main table screen, and one for setup.
 
 <dl>
 	<dt>Starting Note</dt>
-	<dd>The note you select in this scroll list will be the note that the matrix starts with. You can think of this like selecting the octave on a small Midi controller, only this allows you to set any note as the lowest note.<dd> 
+	<dd>The note you select in this scroll list will be the note that the matrix starts with. You can think of this like selecting the octave on a small Midi controller, only this allows you to set any note as the lowest note.</dd> 
 
 	<dt>Midi Input and Output</dt>
 	<dd>These are the midi input and output selections. By default, Harmonic Table will select the first input and output available on your system. MidiOutput is on channel 0 by default, input will accept any channel unless one is selected using the number box.</dd>
