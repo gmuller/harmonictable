@@ -12,13 +12,10 @@ There are two tabs at the top, one for the main table screen, and one for setup.
 	<dd>The note you select in this scroll list will be the note that the matrix starts with. You can think of this like selecting the octave on a small Midi controller, only this allows you to set any note as the lowest note.</dd> 
     <dt>Midi Input and Output</dt>
 	<dd>These are the midi input and output selections. By default, Harmonic Table will select the first input and output available on your system. MidiOutput is on channel 0 by default, input will accept any channel unless one is selected using the number box.</dd>
-
 	<dt>Midi Thru</dt>
 	<dd>When this option is turned on, any notes arriving at the input port will be mirrored to the output port.</dd>
-
 	<dt>Release Notes</dt>
 	<dd>When this option is turned on, note off messages will be send immediately when the mouse or key is released.</dd>
-
 	<dt>Chord Mode</dt>
 	<dd>Chord mode allows the user to play chord when clicking or dragging notes around on the screen. To play a chord, hold down a key from the chart below while clicking a note to play the associated chord:</dd>
 
