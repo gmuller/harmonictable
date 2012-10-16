@@ -15,11 +15,10 @@ import rwmidi.RWMidi;
 import com.grantmuller.midiReference.ChordReference;
 import com.grantmuller.midiReference.MidiReference;
 
-import controlP5.Button;
 import controlP5.ControlEvent;
 import controlP5.ControlP5;
-import controlP5.Controller;
-import controlP5.ScrollList;
+import controlP5.ListBox;
+import controlP5.ListBoxItem;
 import controlP5.Textarea;
 
 public class HarmonicTable extends PApplet {
@@ -33,7 +32,6 @@ public class HarmonicTable extends PApplet {
 	private static final long serialVersionUID = -1512978966491270400L;
 
 	public static void main(String[] args) {
-		//PApplet.main(new String[] { "--present", "processingMidi.ProcessingMidi" });
 		PApplet.main(new String[] { "harmonicTable.HarmonicTable" });
 	}
 
@@ -63,7 +61,7 @@ public class HarmonicTable extends PApplet {
 	MidiOutput midiOutput;
 	MidiInput midiInput;
 	MidiReference midiReference = MidiReference.getMidiReference();
-	String startingNote = "C2";
+	int startingNote;
 	int previousNote;
 	int noteNumber;
 	int currentNote;
@@ -71,7 +69,6 @@ public class HarmonicTable extends PApplet {
 	boolean midiThruToggle = false;
 	PFont font;
 	ArrayList<HexButton> hexButtons;
-	ArrayList<Controller> controllerList;
 	private int[] chord = ChordReference.MAJOR.getDegrees();
 	private boolean chordLock = false;
 	private boolean doRedraw = true;
@@ -84,46 +81,48 @@ public class HarmonicTable extends PApplet {
 		size(ceil(screenWidth)+2,ceil(screenHeight)+17);
 		smooth();
 		textAlign(CENTER);
-		font = loadFont("Myriad-Web-48.vlw");
-		textFont(font, ceil(length * 0.66f)); //calculate font size based on hexagon size
 		controlP5 = new ControlP5(this);
-
-		ScrollList startingNoteList = controlP5.addScrollList("StartingNoteList",0,40,100,500);
+		startingNote = midiReference.getNoteNumber("C2");
+		
+		ListBox startingNoteList = controlP5.addListBox("StartingNoteList",0,40,100,500);
 		startingNoteList.setLabel("Starting Note");
 		startingNoteList.setBackgroundColor(color(4,55,139));
 		for (int i = 0; i < 55; i++) {
-			Button button = startingNoteList.addItem(midiReference.getNoteName(i,true),9+i);
+			ListBoxItem button = startingNoteList.addItem(midiReference.getNoteName(i,true), i);
 			button.setId(i);
 		}
 		startingNoteList.setTab("setup");
 
-		ScrollList midiOutputList = controlP5.addScrollList("MidiOutputList",150,40,250,100);
+		ListBox midiOutputList = controlP5.addListBox("MidiOutputList",150,40,250,100);
 		midiOutputList.setLabel("Midi Output");
 		MidiOutputDevice outputDevices[] = RWMidi.getOutputDevices();
 		for (int i = 0; i < outputDevices.length; i++) {
-			controlP5.Button button = midiOutputList.addItem(outputDevices[i].getName(),i);
+			ListBoxItem button = midiOutputList.addItem(outputDevices[i].getName(),i);
 			button.setId(i);
 		}
 		midiOutputList.setTab("setup");
-		controlP5.addNumberbox("MidiOutputChannel", 0, 150, 185, 25, 15).setTab("setup");
-		controlP5.controller("MidiOutputChannel").setLabel("Midi Output Channel");
-		controlP5.controller("MidiOutputChannel").setColorLabel(0);
-		controlP5.controller("MidiOutputChannel").setMin(1);
-		controlP5.controller("MidiOutputChannel").setMax(16);
+		controlP5.addNumberbox("MidiOutputChannel", 0, 150, 185, 25, 15)
+		.setTab("setup")
+		.setMin(1)
+		.setMax(16)
+		.setCaptionLabel("Midi Output Channel")
+		.setColorCaptionLabel(0);
 
-		ScrollList midiInputList = controlP5.addScrollList("MidiInputList",450,40,250,100);
+
+		ListBox midiInputList = controlP5.addListBox("MidiInputList",450,40,250,100);
 		midiInputList.setLabel("Midi Input");
 		MidiInputDevice inputDevices[] = RWMidi.getInputDevices();
 		for (int i = 0; i < inputDevices.length; i++) {
-			controlP5.Button button = midiInputList.addItem(inputDevices[i].getName(),i);
+			ListBoxItem button = midiInputList.addItem(inputDevices[i].getName(),i);
 			button.setId(i);
 		}		
 		midiInputList.setTab("setup");
-		controlP5.addNumberbox("MidiInputChannel", 0, 450, 185, 25, 15).setTab("setup");
-		controlP5.controller("MidiInputChannel").setLabel("Midi Input Channel");
-		controlP5.controller("MidiInputChannel").setColorLabel(0);
-		controlP5.controller("MidiInputChannel").setMin(0);
-		controlP5.controller("MidiInputChannel").setMax(16);
+		controlP5.addNumberbox("MidiInputChannel", 0, 450, 185, 25, 15)
+		.setTab("setup")
+		.setMin(1)
+		.setMax(16)
+		.setCaptionLabel("Midi Input Channel")
+		.setColorCaptionLabel(0);
 
 		aboutInfoBox = controlP5.addTextarea("AboutInfoBox", aboutInfoString, width-160, height-25, 200, 25);
 		aboutInfoBox.setTab("setup");
@@ -134,18 +133,24 @@ public class HarmonicTable extends PApplet {
 		currentChordBox = controlP5.addTextarea("CurrentChordText", "", width-230, 3, 100, 10);
 		chordLockBox = controlP5.addTextarea("ChordLockText", "", width-310, 3, 100, 10);
 
-		controlP5.addToggle("midiThruToggle", false, 750f, 40f, 20, 20).setTab("setup");
-		controlP5.controller("midiThruToggle").setColorLabel(0);
-		controlP5.controller("midiThruToggle").setLabel("Midi Thru");
+		controlP5.addToggle("midiThruToggle", false)
+		.setPosition(750, 40)
+		.setSize(20, 20)
+		.setTab("setup")
+		.setColorCaptionLabel(0)
+		.setCaptionLabel("Midi Thru");
 
-		controlP5.addToggle("releaseNotesToggle", false, 750f, 80f, 20, 20).setTab("setup");
-		controlP5.controller("releaseNotesToggle").setColorLabel(0);
-		controlP5.controller("releaseNotesToggle").setLabel("Release Notes");
+		controlP5.addToggle("releaseNotesToggle", false)
+		.setPosition(750, 80)
+		.setSize(20, 20)
+		.setTab("setup")
+		.setColorCaptionLabel(0)
+		.setCaptionLabel("Release Notes");
 
-		controlP5.tab("default").activateEvent(true).setId(MAINTAB);
-		controlP5.tab("default").setLabel("main");
-		controlP5.tab("setup").activateEvent(true).setId(SETUPTAB);
-		
+		controlP5.getTab("default").activateEvent(true).setId(MAINTAB);
+		controlP5.getTab("default").setLabel("main");
+		controlP5.getTab("setup").activateEvent(true).setId(SETUPTAB);
+
 		midiOutput = RWMidi.getOutputDevices()[0].createOutput();
 		midiInput = RWMidi.getInputDevices()[0].createInput(this);
 
@@ -212,7 +217,7 @@ public class HarmonicTable extends PApplet {
 
 	public void resetNoteNumber(int rowNumber){
 		if (rowNumber == 0){
-			noteNumber = midiReference.getNoteNumber(startingNote);
+			noteNumber = startingNote;
 			previousNote = noteNumber;
 		} else if (rowNumber % 2 == 0){
 			noteNumber = previousNote + 3;
@@ -280,7 +285,7 @@ public class HarmonicTable extends PApplet {
 				} break;
 			case 21: buttonToActivate = buttonNumber + 48;
 			}
-			
+
 			if (buttonToActivate != 0
 					&& buttonToActivate < hexButtons.size()){
 				hexButtons.get(buttonToActivate).setActive(true);
@@ -396,35 +401,35 @@ public class HarmonicTable extends PApplet {
 			midiInput.plug(this, "processEvents", midiInputChannel);
 		}
 	}
-	
+
 	public void MidiOutputChannel(int theValue){
 		midiOutputChannel = theValue - 1;	
 	}
-	
+
 	public void controlEvent(ControlEvent theEvent) {
-		if (theEvent.isController()){
-			if (theEvent.controller().parent().name() == "StartingNoteList"){
-				startingNote = theEvent.name();
+		if (theEvent.isGroup()){
+			String parentName = theEvent.getName();
+			int value = (int) theEvent.getValue();
+			if (parentName.equals("StartingNoteList")){
+				startingNote = value;
 			}
 
-			if (theEvent.controller().parent().name() == "MidiOutputList"){
+			if (parentName.equals("MidiOutputList")){
 				if (midiOutput != null){
 					midiOutput.closeMidi();
 				}
-				midiOutput = RWMidi.getOutputDevices()[theEvent.controller().id()].createOutput();
+				midiOutput = RWMidi.getOutputDevices()[value].createOutput();
 			}
 
-			if (theEvent.controller().parent().name() == "MidiInputList"){
+			if (parentName.equals("MidiInputList")){
 				if (midiInput != null){
 					midiInput.closeMidi();
 				}
-				midiInput = RWMidi.getInputDevices()[theEvent.controller().id()].createInput(this);
+				midiInput = RWMidi.getInputDevices()[value].createInput(this);
 				midiInput.plug(this, "processEvents", -1);
 			}
-		}
-		else if (theEvent.isTab()) {
-			//println("tab : "+theEvent.tab().id()+" / "+theEvent.tab().name());
-			currentTab =  theEvent.tab().id();
+		} else if (theEvent.isTab()) {
+			currentTab =  theEvent.getTab().getId();
 			switch(currentTab){
 			case MAINTAB:
 				createHexButtons();
@@ -433,11 +438,8 @@ public class HarmonicTable extends PApplet {
 			}
 			return;
 		}
-		else if (theEvent.isGroup()){
-			return;
-		}
 	}
-	
+
 	public void processEvents(Note note)
 	{
 		switch(note.getCommand()){
@@ -477,41 +479,4 @@ public class HarmonicTable extends PApplet {
 			break;
 		}
 	}
-
-	/*
-	public void noteOnReceived(Note note) {
-		
-		if (currentTab == MAINTAB){
-			int listSize = hexButtons.size();
-			for (int i = 0; i < listSize; i++){
-				HexButton button = (HexButton) hexButtons.get(i);
-				currentNote = button.getButtonNoteNumber();
-				if (currentNote == noteNumber){
-					button.setActive(true);
-					doRedraw = true;
-					if (midiThruToggle){
-						midiOutput.sendNoteOn(note.getChannel(), noteNumber, note.getVelocity());
-					}
-					return;
-				}
-			}
-		}
-	}
-
-	public void noteOffReceived(Note note){
-		if (currentTab == MAINTAB){
-			int listSize = hexButtons.size();
-			for (int i = 0; i < listSize; i++){
-				HexButton button = hexButtons.get(i);
-				if (button.isActive()){
-					if (midiThruToggle){
-						midiOutput.sendNoteOff(note.getChannel(), note.getPitch(), note.getVelocity());
-					}			
-				}
-				button.setActive(false);
-			}
-			doRedraw = true;
-		}
-	}
-	*/
 }

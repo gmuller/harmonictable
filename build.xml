@@ -1,0 +1,33 @@
+<project name="Harmonic Table" basedir=".">
+    <property name="lib.dir"     value="lib"/>
+	<property name="src.dir"     value="src"/>
+	<property name="build.dir"   value="build"/>
+	<property name="classes.dir" value="${build.dir}/classes"/>
+	<property name="jar.dir"     value="${build.dir}/jar"/>
+
+	<property name="main-class"  value="harmonicTable.HarmonicTable"/>
+	
+    <path id="classpath">
+        <fileset dir="${lib.dir}" includes="**/*.jar"/>
+    </path>
+	
+    <target name="compile">
+        <mkdir dir="${classes.dir}"/>
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath"/>
+    </target>
+
+    <target name="jar">
+    	<mkdir dir="build/jar"/>
+    	<jar destfile="build/jar/HarmonicTable.jar" basedir="build/classes">
+			<manifest>
+				<attribute name="Main-Class" value="harmonicTable.HarmonicTable"/>
+    	    </manifest>
+    	</jar>
+        <java fork="true" classname="${main-class}">
+            <classpath>
+                <path refid="classpath"/>
+                <path location="${jar.dir}/${ant.project.name}.jar"/>
+            </classpath>
+        </java>
+    </target>
+</project>

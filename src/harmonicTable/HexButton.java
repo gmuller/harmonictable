@@ -3,11 +3,6 @@ package harmonicTable;
 
 public class HexButton extends Hexagon {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -8460198731304739999L;
-
 	String note;
 	private int buttonNoteNumber;
 	private int buttonColor;
