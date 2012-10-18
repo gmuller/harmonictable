@@ -101,6 +101,21 @@ This was built using the <a href="http://www.processing.org">Processing</a> libr
 
 This is an executable jar, meaning if you have java installed on your machine (version 5 or above), you should be able to double-click it and you&#8217;re off and running.
 
+## Compile from source
+
+1. `git clone git@github.com:gmuller/harmonictable.git`
+2. `cd harmonictable`
+3. `ant`
+
+## Open in Eclipse
+
+1. Follow the instructions about to compile from source.
+2. In Eclipse Navigate to "File -> New -> Other".
+3. Select "Java Project from Existing Ant Buildfile".
+4. Navigate to .../harmonictable/build.xml
+5. Complete the wizard
+
+
 <a href="http://www.grantmuller.com/HarmonicTable/HarmonicTable-05.jar">Harmonic Table 05</a>
 
 You can check out the source or report an issue <a href="https://github.com/gmuller/harmonictable/issues">here</a>.
