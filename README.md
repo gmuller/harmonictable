@@ -1,5 +1,7 @@
 HarmonicTable is a replica of the C-thru aXis built with Java and Processing that is playable with a mouse and keyboard. The end goal of this project is to port the application to a touchscreen.
 
+Read more about it in the [blog series]("http://grantmuller.com/series/harmonic-table")
+
 ![HarmonicTable Image][1]
 
 ## Documentation
