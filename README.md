@@ -1,6 +1,6 @@
 HarmonicTable is a replica of the C-thru aXis built with Java and Processing that is playable with a mouse and keyboard. The end goal of this project is to port the application to a touchscreen.
 
-<a href="http://www.grantmuller.com/wp-content/uploads/harmonictable011.gif"><img class="aligncenter size-full wp-image-368" title="harmonictable011" src="http://www.grantmuller.com/wp-content/uploads/harmonictable011.gif" alt="harmonictable011" width="520" height="565" /></a>
+![HarmonicTable Image][1]
 
 ## Documentation
 
@@ -95,8 +95,6 @@ In addition you can turn on <strong>chord lock</strong> by pressing the 'b' key.
 
 This was built using the <a href="http://www.processing.org">Processing</a> libraries, along with the <a href="http://www.sojamo.de/libraries/controlP5/">ControlP5</a> library and <a href="http://ruinwesen.com/support-files/rwmidi/documentation/RWMidi.html">Ruin & Wesen's rwmidi</a> library for midi functionality.
 
-<a href="http://blog.makezine.com/archive/2009/01/harmonic_table_input_software.html"><img src="http://makezine.com/images/ads/makers/See_Me_on_MAKE.gif" alt="See me on Make!" width="100" height="99" border="0" /></a>
-
 ## Download
 
 This is an executable jar, meaning if you have java installed on your machine (version 5 or above), you should be able to double-click it and you&#8217;re off and running.
@@ -119,3 +117,5 @@ This is an executable jar, meaning if you have java installed on your machine (v
 <a href="http://www.grantmuller.com/HarmonicTable/HarmonicTable-05.jar">Harmonic Table 05</a>
 
 You can check out the source or report an issue <a href="https://github.com/gmuller/harmonictable/issues">here</a>.
+
+[1]: https://grantmuller.com/images/harmonictable011.gif
